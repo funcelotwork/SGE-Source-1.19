@@ -1,7 +1,7 @@
 {
 Пакет             Simple Tools 1
 Файл              StringArray.pas
-Версия            1.5
+Версия            1.8
 Создан            14.05.2018
 Автор             Творческий человек  (accuratealx@gmail.com)
 Описание          Динамический массив строк
@@ -17,7 +17,7 @@ unit StringArray;
 interface
 
 uses
-  SysUtils;
+  SysUtils, StrUtils;
 
 
 const
@@ -63,7 +63,7 @@ procedure StringArray_Copy(PSrc, PDest: PStringArray; Options: TSearchOptions = 
 procedure StringArray_Remix(P: PStringArray; Count: Integer = -1);
 procedure StringArray_Sort(P: PStringArray; Direction: TSortDirection = sdForward; Mode: TSortMode = smBubble);
 function  StringArray_GetPart(P: PStringArray; Index: Integer; Default: String = ''): String;
-
+procedure StringArray_Trim(P: PStringArray);
 
 
 implementation
@@ -362,11 +362,38 @@ end;
 }
 procedure StringArray_StringToArray(P: PStringArray; Str: String; Divider: String = sa_StrDivider);
 var
-  i, l: Integer;
+  i, l, StartIdx, Size: Integer;
   s: String;
 begin
-  StringArray_Clear(P);
+  StringArray_Clear(P);   //Почистить массив
+
+  StartIdx := 1;
+  Size := Length(Str);
   l := Length(Divider);
+
+  repeat
+    i := PosEx(Divider, Str, StartIdx);
+
+    //Есть совпадения
+    if i > 0 then
+      begin
+      s := Copy(Str, StartIdx, i - StartIdx);
+      StringArray_Add(P, s);
+      StartIdx := i + l;
+      end;
+
+    //Нет совпадений, добавить хвост
+    if (i = 0) and (i <> Size) then
+      begin
+      s := '';
+      s := Copy(Str, StartIdx, Size - StartIdx + 1);
+      StringArray_Add(P, s);
+      end;
+
+  until i <= 0;
+
+
+  {l := Length(Divider);
   repeat
   i := Pos(Divider, Str);
   if i > 0 then
@@ -376,7 +403,7 @@ begin
     Delete(Str, 1, i + l - 1);
     end;
   if (i = 0) and (Length(Str) > 0) then StringArray_Add(P, Str);
-  until i <= 0;
+  until i <= 0;}
 end;
 
 
@@ -399,7 +426,6 @@ var
   Size: Integer;
 begin
   Result := False;
-  if not ForceDirectories(ExtractFilePath(FileName)) then Exit;
   Str := StringArray_ArrayToString(P, Divider);
   try
     AssignFile(f, FileName);
@@ -625,6 +651,22 @@ begin
   if (Index < 0) or (Index > c) then Result := Default else Result := P^[Index];
 end;
 
+
+
+{
+Описание
+  Функция обрезает лишние символы в массиве
+Параметры
+  P       - Массив строк
+}
+procedure StringArray_Trim(P: PStringArray);
+var
+  c, i: Integer;
+begin
+  c := StringArray_GetCount(P) - 1;
+  for i := 0 to c do
+    P^[i] := Trim(P^[i]);
+end;
 
 
 
